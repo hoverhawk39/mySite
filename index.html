@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日一句學英語 | Daily English Learning</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', '"Noto Sans TC"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+        .word-chip {
+            transition: all 0.2s ease;
+        }
+        .word-chip:hover {
+            transform: translateY(-2px);
+            background-color: #e0e7ff;
+            color: #4338ca;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col justify-between selection:bg-brand-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200/80">
+        <div class="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+                    <i class="fa-solid fa-language text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight text-slate-900">每日一句學英語</h1>
+                    <p class="text-xs text-slate-500">Daily English Sentence</p>
+                </div>
+            </div>
+            
+            <!-- Streak Tracker -->
+        <div class="flex items-center gap-3">
+            <button onclick="openSettingsModal()" class="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white px-3.5 py-1.5 rounded-full text-xs font-bold shadow-md shadow-indigo-500/20 transition active:scale-95">
+                <i class="fa-solid fa-key text-amber-200 animate-pulse"></i>
+                <span id="ttsEngineBadge">設定 API Key</span>
+            </button>
+            <div class="flex items-center bg-amber-50 border border-amber-200/60 px-3 py-1.5 rounded-full text-amber-700 text-xs font-semibold shadow-sm">
+                <i class="fa-solid fa-fire text-amber-500 mr-1.5 text-sm animate-pulse"></i>
+                <span>連續學習 <strong id="streakCount" class="text-amber-800 text-sm">1</strong> 天</span>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Main Container -->
+<main class="max-w-4xl mx-auto px-4 py-6 w-full space-y-6 flex-1">
+
+        <!-- Category Selector -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none" id="categoryNav">
+            <button onclick="filterCategory('all')" class="cat-btn active px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap bg-brand-600 text-white shadow-sm transition">全部情境</button>
+            <button onclick="filterCategory('business')" class="cat-btn px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">職場商務</button>
+            <button onclick="filterCategory('daily')" class="cat-btn px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">日常社交</button>
+            <button onclick="filterCategory('idiom')" class="cat-btn px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">道地俚語</button>
+            <button onclick="filterCategory('motivation')" class="cat-btn px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">金句哲理</button>
+            <button onclick="filterCategory('travel')" class="cat-btn px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">旅遊出差</button>
+        </div>
+
+        <!-- Today's Sentence Hero Card -->
+        <div class="bg-gradient-to-br from-indigo-900 via-brand-800 to-slate-900 rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden">
+            <!-- Decorative circle -->
+            <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-brand-500/20 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div class="flex items-center justify-between mb-4">
+                <span id="badgeCategory" class="px-3 py-1 bg-white/15 backdrop-blur-md text-indigo-200 text-xs font-medium rounded-full border border-white/10">
+                    <i class="fa-solid fa-tag text-xs mr-1"></i> 職場商務
+                </span>
+                <button onclick="toggleBookmark()" id="bookmarkBtn" class="text-white/60 hover:text-amber-400 transition text-lg" title="收藏句子">
+                    <i class="fa-regular fa-bookmark"></i>
+                </button>
+            </div>
+
+            <!-- English Sentence -->
+            <div class="space-y-3 my-4">
+                <h2 id="sentenceEnglish" class="text-2xl md:text-3xl font-extrabold tracking-tight leading-relaxed text-white">
+                    <!-- Dynamic Text -->
+                </h2>
+                <!-- Phonetic / IPA -->
+                <p id="sentenceIPA" class="text-indigo-200/80 text-sm font-mono tracking-wide flex items-center gap-2">
+                    <!-- Dynamic IPA -->
+                </p>
+                <!-- Translation -->
+                <p id="sentenceChinese" class="text-lg md:text-xl text-slate-200 font-medium pt-2 border-t border-white/10">
+                    <!-- Dynamic Translation -->
+                </p>
+            </div>
+
+            <!-- Audio Controls & Action Bar -->
+        <div class="pt-6 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <button id="btnPlayNormal" onclick="playSpeech(1.0)" class="flex items-center gap-2 px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-brand-500/30 transition active:scale-95 disabled:opacity-50">
+                    <i class="fa-solid fa-volume-high" id="iconPlayNormal"></i>
+                    <span id="textPlayNormal">朗讀句子</span>
+                </button>
+                <button id="btnPlaySlow" onclick="playSpeech(0.75)" class="flex items-center gap-2 px-3 py-2.5 bg-white/10 hover:bg-white/20 text-indigo-100 rounded-xl font-medium text-xs transition border border-white/10 disabled:opacity-50" title="慢速朗讀">
+                    <i class="fa-solid fa-gauge-simple-low" id="iconPlaySlow"></i>
+                    <span id="textPlaySlow">慢速 0.75x</span>
+                </button>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="prevSentence()" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition border border-white/10" title="上一句">
+                    <i class="fa-solid fa-chevron-left text-sm"></i>
+                </button>
+                <button onclick="randomSentence()" class="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium text-xs transition border border-white/10 flex items-center gap-1.5">
+                    <i class="fa-solid fa-shuffle"></i>
+                    <span>隨機換句</span>
+                </button>
+                <button onclick="nextSentence()" class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition border border-white/10" title="下一句">
+                    <i class="fa-solid fa-chevron-right text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        // Database of Sentences
+        const sentencesData = [
+            {
+                id: 1,
+                category: "business",
+                categoryLabel: "職場商務",
+                english: "I'd like to touch base with you regarding our project timeline.",
+                ipa: "/aɪd laɪk tʊ tʌtʃ beɪs wɪð juː rɪˈɡɑːrdɪŋ ˈaʊər ˈprɒdʒekt ˈtaɪmlaɪn/",
+                chinese: "我想跟你確認一下我們專案的時間表與進度。",
+                grammar: "「touch base with (someone)」是極為道地的職場片語，意思是「與某人接洽/確認進度/簡短聯繫」，比傳統的 Contact 更自然友好。",
+                words: [
+                    { word: "touch base", meaning: "片語 / 保持聯繫、確認進度", phonetic: "/tʌtʃ beɪs/" },
+                    { word: "regarding", meaning: "介系詞 / 關於、有關", phonetic: "/rɪˈɡɑːrdɪŋ/" },
+                    { word: "timeline", meaning: "名詞 / 時間表、進度規劃", phonetic: "/ˈtaɪmlaɪn/" }
+                ],
+                examples: [
+                    "Let's touch base next Monday before the client presentation.",
+                    "I will drop you an email to touch base on the updates."
+                ]
+            },
+            {
+                id: 2,
+                category: "business",
+                categoryLabel: "職場商務",
+                english: "Let's keep each other in the loop as things progress.",
+                ipa: "/lets kiːp iːtʃ ˈʌðər ɪn ðə luːp æz θɪŋz prəˈɡres/",
+                chinese: "隨著事情進展，我們隨時保持資訊同步與溝通。",
+                grammar: "「keep someone in the loop」意思是讓某人保持在圈子/資訊網內，即「隨時匯報進度/隨時知會某人」。反之「out of the loop」就是對狀況一無所知。",
+                words: [
+                    { word: "in the loop", meaning: "片語 / 掌握內部消息、資訊同步", phonetic: "/ɪn ðə luːp/" },
+                    { word: "progress", meaning: "動詞 / 進展、推進", phonetic: "/prəˈɡres/" }
+                ],
+                examples: [
+                    "Please keep me in the loop regarding any changes to the schedule.",
+                    "Sorry I missed the call, I was completely out of the loop."
+                ]
+            },
+            {
+                id: 3,
+                category: "daily",
+                categoryLabel: "日常社交",
+                english: "I'm feeling a bit under the weather today, so I think I'll call it a day.",
+                ipa: "/aɪm ˈfiːlɪŋ ə bɪt ˈʌndər ðə ˈweðər təˈdeɪ, səʊ aɪ θɪŋk aɪl kɔːl ɪt ə deɪ/",
+                chinese: "我今天感覺身體有點不舒服，所以打算先收工休息了。",
+                grammar: "「under the weather」是表達身體微恙、有點小感冒或疲倦的常用地道說法；「call it a day」表示結束當天的工作或活動。",
+                words: [
+                    { word: "under the weather", meaning: "片語 / 身體微恙、不舒服", phonetic: "/ˈʌndər ðə ˈweðər/" },
+                    { word: "call it a day", meaning: "片語 / 到此為止、收工", phonetic: "/kɔːl ɪt ə deɪ/" }
+                ],
+                examples: [
+                    "She decided to stay home because she was under the weather.",
+                    "We've been working for 10 hours, let's call it a day."
+                ]
+            },
+            {
+                id: 4,
+                category: "idiom",
+                categoryLabel: "道地俚語",
+                english: "It's not rocket science; you'll get the hang of it in no time.",
+                ipa: "/ɪts nɒt ˈrɒkɪt ˈsaɪəns; juːl ɡet ðə hæŋ ɒv ɪt ɪn nəʊ taɪm/",
+                chinese: "這又不是什麼難事；你很快就能掌握要領的。",
+                grammar: "「not rocket science」用來形容事情並不複雜難懂；「get the hang of something」表示抓到某件事的訣竅或上手了。",
+                words: [
+                    { word: "rocket science", meaning: "名詞 / 極為複雜高深的事物", phonetic: "/ˈrɒkɪt ˈsaɪəns/" },
+                    { word: "get the hang of", meaning: "片語 / 掌握...的訣竅、上手", phonetic: "/ɡet ðə hæŋ ɒv/" }
+                ],
+                examples: [
+                    "Don't worry about driving automatic, it's not rocket science.",
+                    "Once you practice a few times, you'll get the hang of using this tool."
+                ]
+            },
+            {
+                id: 5,
+                category: "motivation",
+                categoryLabel: "金句哲理",
+                english: "Small daily improvements over time lead to stunning results.",
+                ipa: "/smɔːl ˈdeɪli ɪmˈpruːvmənts ˈəʊvər taɪm liːd tʊ ˈstʌnɪŋ rɪˈzʌlts/",
+                chinese: "每天微小的進步，隨著時間累積，將帶來驚人的成就。",
+                grammar: "句型「A lead to B」表示「A 導致/帶來 B」。「over time」為長時間下來。強調複合利息式的原子習慣力量。",
+                words: [
+                    { word: "improvement", meaning: "名詞 / 進步、改善", phonetic: "/ɪmˈpruːvmənt/" },
+                    { word: "stunning", meaning: "形容詞 / 令人震驚的、極好的", phonetic: "/ˈstʌnɪŋ/" },
+                    { word: "lead to", meaning: "片語 / 導致、引致", phonetic: "/liːd tuː/" }
+                ],
+                examples: [
+                    "Consistency leads to long-term success.",
+                    "Her performance in the concert was absolutely stunning."
+                ]
+            },
+            {
+                id: 6,
+                category: "travel",
+                categoryLabel: "旅遊出差",
+                english: "Could you recommend a local specialty dish around here?",
+                ipa: "/kʊd juː ˌrekəˈmend ə ˈləʊkl ˈspeʃəlti dɪʃ əˈraʊnd hɪər/",
+                chinese: "你能推薦這附近有什麼在地的特色餐點嗎？",
+                grammar: "「recommend + 名詞 + to/for 某人」表示推薦。使用「Could you...」比「Can you...」更加禮貌自然。",
+                words: [
+                    { word: "recommend", meaning: "動詞 / 推薦、建議", phonetic: "/ˌrekəˈmend/" },
+                    { word: "specialty", meaning: "名詞 / 特產、招牌菜", phonetic: "/ˈspeʃəlti/" }
+                ],
+                examples: [
+                    "What is the specialty of this restaurant?",
+                    "Could you recommend a nice coffee shop nearby?"
+                ]
+            }
+        ];
+
+        // State Management
+        let currentFilteredList = [...sentencesData];
+        let currentIndex = 0;
+        let bookmarks = JSON.parse(localStorage.getItem('english_bookmarks') || '[]');
+        let streak = parseInt(localStorage.getItem('english_streak') || '1');
+        
+        let customApiKey = localStorage.getItem('gemini_api_key') || '';
+        let selectedVoice = localStorage.getItem('gemini_voice') || 'Zephyr';
+        let isGeminiTTSEnabled = localStorage.getItem('use_gemini_tts') !== 'false'; // default true
+        let currentAudioObject = null;
+
+        // Function: renderCurrentSentence
+        function renderCurrentSentence() {
+            if (!currentFilteredList || currentFilteredList.length === 0) return;
+            const item = currentFilteredList[currentIndex];
+
+            // Category Badge & Bookmark Status
+            const badgeEl = document.getElementById('badgeCategory');
+            if (badgeEl) {
+                badgeEl.innerHTML = `<i class="fa-solid fa-tag text-xs mr-1"></i> ${item.categoryLabel}`;
+            }
+            
+            const isBookmarked = bookmarks.some(b => b.id === item.id);
+            const bookmarkBtn = document.getElementById('bookmarkBtn');
+            if (bookmarkBtn) {
+                bookmarkBtn.innerHTML = isBookmarked 
+                    ? `<i class="fa-solid fa-bookmark text-amber-400"></i>` 
+                    : `<i class="fa-regular fa-bookmark"></i>`;
+            }
+
+            // Sentence Content
+            document.getElementById('sentenceEnglish').textContent = item.english;
+            document.getElementById('sentenceIPA').textContent = item.ipa;
+            document.getElementById('sentenceChinese').textContent = item.chinese;
+
+            // Key Vocabulary Cards
+            const wordsContainer = document.getElementById('wordsContainer');
+            if (wordsContainer) {
+                wordsContainer.innerHTML = item.words.map(w => `
+                    <div onclick="speakWord('${w.word.replace(/'/g, "\\'")}')" class="word-chip p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl cursor-pointer flex items-center justify-between group">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-slate-800 text-sm group-hover:text-brand-600">${w.word}</span>
+                                <span class="text-[11px] font-mono text-slate-400">${w.phonetic || ''}</span>
+                            </div>
+                            <p class="text-xs text-slate-600 mt-0.5">${w.meaning}</p>
+                        </div>
+                        <div class="w-7 h-7 rounded-lg bg-indigo-50 text-brand-600 flex items-center justify-center text-xs opacity-80 group-hover:opacity-100 group-hover:bg-brand-600 group-hover:text-white transition">
+                            <i class="fa-solid fa-volume-high"></i>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Grammar Explanation
+            const grammarEl = document.getElementById('grammarExplanation');
+            if (grammarEl) grammarEl.textContent = item.grammar;
+
+            // Alternative Examples
+            const exContainer = document.getElementById('alternativeExamples');
+            if (exContainer) {
+                exContainer.innerHTML = item.examples.map(ex => `<li>${ex}</li>`).join('');
+            }
+
+            // Reset Practice Input Section
+            const practiceInput = document.getElementById('practiceInput');
+            if (practiceInput) practiceInput.value = '';
+            
+            const practiceResult = document.getElementById('practiceResult');
+            if (practiceResult) {
+                practiceResult.textContent = '';
+                practiceResult.className = 'text-sm font-semibold pt-1';
+            }
+
+            const practiceHint = document.getElementById('practiceHint');
+            if (practiceHint) {
+                practiceHint.classList.add('hidden');
+                practiceHint.textContent = '';
+            }
+        }
+
+        // Category Filter
+        function filterCategory(cat) {
+            const btns = document.querySelectorAll('.cat-btn');
+            btns.forEach(btn => {
+                btn.classList.remove('bg-brand-600', 'text-white', 'shadow-sm');
+                btn.classList.add('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+            });
+
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.remove('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+                event.currentTarget.classList.add('bg-brand-600', 'text-white', 'shadow-sm');
+            }
+
+            if (cat === 'all') {
+                currentFilteredList = [...sentencesData];
+            } else {
+                currentFilteredList = sentencesData.filter(s => s.category === cat);
+            }
+            currentIndex = 0;
+            renderCurrentSentence();
+        }
+
+        // Switch Learning Tabs
+        function switchTab(tabName) {
+            const tabs = ['words', 'grammar', 'practice'];
+            tabs.forEach(t => {
+                const tabBtn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+                const content = document.getElementById('content' + t.charAt(0).toUpperCase() + t.slice(1));
+                
+                if (t === tabName) {
+                    if (tabBtn) tabBtn.className = 'font-bold text-sm text-brand-600 border-b-2 border-brand-600 pb-4 -mb-4 flex items-center gap-2';
+                    if (content) content.classList.remove('hidden');
+                } else {
+                    if (tabBtn) tabBtn.className = 'font-medium text-sm text-slate-500 hover:text-slate-800 pb-4 -mb-4 flex items-center gap-2 transition';
+                    if (content) content.classList.add('hidden');
+                }
+            });
+        }
+
+        // Navigation Controls
+        function prevSentence() {
+            if (currentFilteredList.length === 0) return;
+            currentIndex = (currentIndex - 1 + currentFilteredList.length) % currentFilteredList.length;
+            renderCurrentSentence();
+        }
+
+        function nextSentence() {
+            if (currentFilteredList.length === 0) return;
+            currentIndex = (currentIndex + 1) % currentFilteredList.length;
+            renderCurrentSentence();
+        }
+
+        function randomSentence() {
+            if (currentFilteredList.length <= 1) return;
+            let newIndex;
+            do {
+                newIndex = Math.floor(Math.random() * currentFilteredList.length);
+            } while (newIndex === currentIndex);
+            currentIndex = newIndex;
+            renderCurrentSentence();
+        }
+
+        // Dictation Practice Check
+        function checkPracticeAnswer() {
+            const input = document.getElementById('practiceInput').value.trim();
+            const target = currentFilteredList[currentIndex].english;
+            const resultEl = document.getElementById('practiceResult');
+
+            const cleanInput = input.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()?'"]/g, "").replace(/\s+/g, " ");
+            const cleanTarget = target.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()?'"]/g, "").replace(/\s+/g, " ");
+
+            if (cleanInput === cleanTarget) {
+                resultEl.textContent = "🎉 太棒了！完全正確！";
+                resultEl.className = "text-sm font-semibold pt-1 text-emerald-600 animate-bounce";
+            } else {
+                resultEl.textContent = "❌ 還有點小誤差，再多聽一次試試看！";
+                resultEl.className = "text-sm font-semibold pt-1 text-rose-500";
+            }
+        }
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('streakCount').textContent = streak;
+            document.getElementById('userApiKeyInput').value = customApiKey;
+            document.getElementById('voiceSelect').value = selectedVoice;
+            document.getElementById('toggleGeminiTTS').checked = isGeminiTTSEnabled;
+            updateEngineBadge();
+            renderCurrentSentence();
+            renderBookmarks();
+        });
+
+        // Settings Modal Controls
+        function openSettingsModal() {
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function toggleKeyVisibility() {
+            const input = document.getElementById('userApiKeyInput');
+            const icon = document.getElementById('keyEyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-regular fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-regular fa-eye';
+            }
+        }
+
+        function saveTTSSettings() {
+            customApiKey = document.getElementById('userApiKeyInput').value.trim();
+            selectedVoice = document.getElementById('voiceSelect').value;
+            isGeminiTTSEnabled = document.getElementById('toggleGeminiTTS').checked;
+
+            localStorage.setItem('gemini_api_key', customApiKey);
+            localStorage.setItem('gemini_voice', selectedVoice);
+            localStorage.setItem('use_gemini_tts', isGeminiTTSEnabled ? 'true' : 'false');
+
+            updateEngineBadge();
+        }
+
+        function updateEngineBadge() {
+            const badge = document.getElementById('ttsEngineBadge');
+            if (isGeminiTTSEnabled) {
+                badge.textContent = `Gemini AI (${selectedVoice})`;
+            } else {
+                badge.textContent = '系統原生語音';
+            }
+        }
+
+        function saveSettingsAndTest() {
+            saveTTSSettings();
+            closeSettingsModal();
+            playSpeech(1.0);
+        }
+
+        // Gemini TTS API Call & PCM to WAV converter
+        async function playGeminiTTS(textToSpeak, speed = 1.0) {
+            const apiKey = customApiKey || ""; // Canvas auto-provides runtime key when empty
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+            // Adjust system prompt based on speed request
+            const stylePrompt = speed < 0.9 
+                ? `Say slowly, clearly, and attentively with natural phrasing: "${textToSpeak}"`
+                : `Say with a natural, clear, and native American accent: "${textToSpeak}"`;
+
+            const payload = {
+                contents: [{
+                    parts: [{ text: stylePrompt }]
+                }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: selectedVoice }
+                        }
+                    }
+                }
+            };
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Gemini TTS API request failed: ${response.status}`);
+            }
+
+            const result = await response.json();
+            const part = result?.candidates?.[0]?.content?.parts?.[0];
+            const audioDataBase64 = part?.inlineData?.data;
+            const mimeType = part?.inlineData?.mimeType || "audio/L16;rate=24000";
+
+            if (!audioDataBase64) {
+                throw new Error("No audio data received from Gemini API");
+            }
+
+            // Extract sample rate from mimeType if present (e.g. rate=24000)
+            let sampleRate = 24000;
+            const rateMatch = mimeType.match(/rate=(\d+)/);
+            if (rateMatch && rateMatch[1]) {
+                sampleRate = parseInt(rateMatch[1], 10);
+            }
+
+            const wavBlob = pcm16ToWavBlob(audioDataBase64, sampleRate);
+            const audioUrl = URL.createObjectURL(wavBlob);
+
+            if (currentAudioObject) {
+                currentAudioObject.pause();
+            }
+
+            currentAudioObject = new Audio(audioUrl);
+            return currentAudioObject.play();
+        }
+
+        // Convert base64 PCM16 data into WAV Blob for HTML Audio Playback
+        function pcm16ToWavBlob(base64Data, sampleRate = 24000) {
+            const binary = atob(base64Data);
+            const len = binary.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            const pcm16 = new Int16Array(bytes.buffer);
+
+            const numChannels = 1;
+            const byteRate = sampleRate * numChannels * 2;
+            const blockAlign = numChannels * 2;
+            const buffer = new ArrayBuffer(44 + pcm16.length * 2);
+            const view = new DataView(buffer);
+
+            function writeString(offset, str) {
+                for (let i = 0; i < str.length; i++) {
+                    view.setUint8(offset + i, str.charCodeAt(i));
+                }
+            }
+
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + pcm16.length * 2, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // Raw PCM
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, byteRate, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, 16, true); // 16-bit
+            writeString(36, 'data');
+            view.setUint32(40, pcm16.length * 2, true);
+
+            let offset = 44;
+            for (let i = 0; i < pcm16.length; i++) {
+                view.setInt16(offset, pcm16[i], true);
+                offset += 2;
+            }
+
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        // Main Text-to-Speech Handler
+        async function playSpeech(rate = 1.0) {
+            const currentSentence = currentFilteredList[currentIndex].english;
+
+            // UI Loading Indicators
+            const isSlow = rate < 0.9;
+            const btn = isSlow ? document.getElementById('btnPlaySlow') : document.getElementById('btnPlayNormal');
+            const icon = isSlow ? document.getElementById('iconPlaySlow') : document.getElementById('iconPlayNormal');
+            const originalIconClass = isSlow ? 'fa-solid fa-gauge-simple-low' : 'fa-solid fa-volume-high';
+
+            btn.disabled = true;
+            icon.className = 'fa-solid fa-circle-notch fa-spin';
+
+            try {
+                if (isGeminiTTSEnabled) {
+                    await playGeminiTTS(currentSentence, rate);
+                } else {
+                    playWebSpeech(currentSentence, rate);
+                }
+            } catch (error) {
+                console.warn('Gemini TTS failed, falling back to Web Speech API:', error);
+                playWebSpeech(currentSentence, rate);
+            } finally {
+                btn.disabled = false;
+                icon.className = originalIconClass;
+            }
+        }
+
+        function playWebSpeech(text, rate = 1.0) {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = rate;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function speakWord(word) {
+            if (isGeminiTTSEnabled) {
+                playGeminiTTS(word, 1.0).catch(() => playWebSpeech(word, 0.9));
+            } else {
+                playWebSpeech(word, 0.9);
+            }
+        }
+
+        function toggleHint() {
+            const hintEl = document.getElementById('practiceHint');
+            const target = currentFilteredList[currentIndex].english;
+            
+            // Generate simple hint (first letter of each word)
+            const hintText = target.split(' ').map(w => w[0] + '_'.repeat(w.length - 1)).join(' ');
+            hintEl.textContent = `首字母提示： ${hintText}`;
+            hintEl.classList.toggle('hidden');
+        }
+
+        // Bookmark Toggle
+        function toggleBookmark() {
+            const currentItem = currentFilteredList[currentIndex];
+            const index = bookmarks.findIndex(b => b.id === currentItem.id);
+
+            if (index > -1) {
+                bookmarks.splice(index, 1);
+            } else {
+                bookmarks.push(currentItem);
+            }
+
+            localStorage.setItem('english_bookmarks', JSON.stringify(bookmarks));
+            renderCurrentSentence();
+            renderBookmarks();
+        }
+
+        function renderBookmarks() {
+            const listEl = document.getElementById('bookmarksList');
+            const countEl = document.getElementById('bookmarkCount');
+            countEl.textContent = bookmarks.length;
+
+            if (bookmarks.length === 0) {
+                listEl.innerHTML = `<p class="text-slate-400 text-xs italic">尚未收藏任何句子，點擊卡片右上角的書籤按鈕即可收藏！</p>`;
+                return;
+            }
+
+            listEl.innerHTML = bookmarks.map(b => `
+                <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between hover:bg-slate-100 transition">
+                    <div>
+                        <p class="font-bold text-slate-800 text-xs">${b.english}</p>
+                        <p class="text-xs text-slate-500 mt-0.5">${b.chinese}</p>
+                    </div>
+                    <button onclick="removeBookmark(${b.id})" class="text-slate-400 hover:text-rose-500 p-1 transition">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function removeBookmark(id) {
+            bookmarks = bookmarks.filter(b => b.id !== id);
+            localStorage.setItem('english_bookmarks', JSON.stringify(bookmarks));
+            renderCurrentSentence();
+            renderBookmarks();
+        }
+    </script>
+
+    <!-- Settings & API Key Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden transition-opacity duration-200">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-5 relative animate-in fade-in zoom-in duration-150">
+            <!-- Close Button -->
+            <button onclick="closeSettingsModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Modal Header -->
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-xl font-bold">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">API Key & 發音設定</h3>
+                    <p class="text-xs text-slate-500">串接 Gemini API 以獲取超自然 AI 語音</p>
+                </div>
+            </div>
+
+            <!-- Modal Body Form -->
+            <div class="space-y-4 pt-2">
+                <!-- API Key Input -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">
+                        Gemini API Key
+                    </label>
+                    <div class="relative flex items-center">
+                        <input type="password" id="userApiKeyInput" placeholder="貼上您的 AI Studio API Key (AIzaSy...)" 
+                               class="w-full pl-3.5 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition font-mono">
+                        <button type="button" onclick="toggleKeyVisibility()" class="absolute right-3 text-slate-400 hover:text-slate-600 p-1">
+                            <i id="keyEyeIcon" class="fa-regular fa-eye"></i>
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                        <i class="fa-solid fa-circle-info text-brand-500"></i>
+                        尚未獲得 Key？可前往 <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-brand-600 underline font-semibold hover:text-brand-700">Google AI Studio</a> 免費申請。
+                    </p>
+                </div>
+
+                <!-- Voice Selection -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">
+                        AI 朗讀音色選擇
+                    </label>
+                    <select id="voiceSelect" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                        <option value="Zephyr">Zephyr (自信明亮 - 推薦)</option>
+                        <option value="Puck">Puck (活潑生動)</option>
+                        <option value="Kore">Kore (專業堅定)</option>
+                        <option value="Fenrir">Fenrir (熱情澎湃)</option>
+                        <option value="Aoede">Aoede (輕快流暢)</option>
+                        <option value="Callirrhoe">Callirrhoe (親切溫和)</option>
+                    </select>
+                </div>
+
+                <!-- Enable/Disable Gemini TTS Switch -->
+                <div class="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
+                    <div>
+                        <p class="text-xs font-bold text-slate-800">啟用 Gemini AI 語音引擎</p>
+                        <p class="text-[11px] text-slate-500">關閉後將自動降級使用瀏覽器內建語音</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="toggleGeminiTTS" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                    </label>
+                </div>
+
+                <div class="text-[11px] text-slate-400 bg-amber-50/60 border border-amber-100 rounded-xl p-2.5">
+                    🔒 您的 API Key 僅會安全儲存於您本地瀏覽器的 `localStorage` 中，不會傳送至任何第三方伺服器。
+                </div>
+            </div>
+
+            <!-- Modal Footer Buttons -->
+            <div class="flex items-center gap-3 pt-2">
+                <button onclick="closeSettingsModal()" class="w-1/2 py-2.5 border border-slate-200 text-slate-600 font-semibold text-xs rounded-xl hover:bg-slate-50 transition">
+                    取消
+                </button>
+                <button onclick="saveSettingsAndTest()" class="w-1/2 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl shadow-md shadow-brand-500/20 transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-check"></i>
+                    儲存並測試發音
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
